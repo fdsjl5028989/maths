@@ -12,9 +12,14 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            background-color: #f0f0f0;
-            background-image: url('https://img.freepik.com/free-vector/space-background-with-landscape-alien-planet_107791-1369.jpg');
-            background-size: cover;
+            background: linear-gradient(135deg, #FF9D6C, #BB4E75, #6B4984);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
         .game-container {
             background-color: rgba(255, 255, 255, 0.9);
