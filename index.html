@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Place Value and Trading Math Game</title>
+    <title>Math Games</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -43,13 +43,21 @@
         button:hover {
             background-color: #45a049;
         }
+        #game-selector {
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
     <div class="game-container">
-        <h1>Place Value and Trading Math Game</h1>
+        <h1>Math Games</h1>
+        <div id="game-selector">
+            <button onclick="selectGame('placeValue')">Place Value</button>
+            <button onclick="selectGame('metricConversion')">Metric Conversion</button>
+            <button onclick="selectGame('fractions')">Fractions</button>
+        </div>
         <div id="question"></div>
-        <input type="number" id="answer" placeholder="Your answer">
+        <input type="text" id="answer" placeholder="Your answer">
         <button onclick="checkAnswer()">Submit</button>
         <p id="result"></p>
         <p id="score"></p>
@@ -59,15 +67,22 @@
         let currentQuestion;
         let score = 0;
         let totalQuestions = 0;
+        let currentGame = 'placeValue';
+
+        function selectGame(game) {
+            currentGame = game;
+            score = 0;
+            totalQuestions = 0;
+            displayQuestion();
+        }
 
         function generateNumber(digits) {
             return Math.floor(Math.random() * (10 ** digits - 10 ** (digits - 1)) + 10 ** (digits - 1));
         }
 
-        function generateQuestion() {
+        function generatePlaceValueQuestion() {
             const operation = Math.random() < 0.5 ? '+' : '-';
             let num1, num2, answer;
-
             if (operation === '+') {
                 num1 = generateNumber(Math.floor(Math.random() * 3) + 2);
                 num2 = generateNumber(Math.floor(Math.random() * 3) + 2);
@@ -79,29 +94,94 @@
                 } while (num2 > num1);
                 answer = num1 - num2;
             }
+            return { question: `${num1}<br>${operation} ${num2}<br>---------------`, answer: answer };
+        }
 
-            return { num1, operation, num2, answer };
+        function generateMetricConversionQuestion() {
+            const units = ['g', 'kg'];
+            const fromUnit = units[Math.floor(Math.random() * units.length)];
+            const toUnit = fromUnit === 'g' ? 'kg' : 'g';
+            let value, answer;
+            if (fromUnit === 'g') {
+                value = Math.floor(Math.random() * 9000) + 1000; // 1000g to 10000g
+                answer = value / 1000;
+            } else {
+                value = Math.floor(Math.random() * 9) + 1; // 1kg to 10kg
+                answer = value * 1000;
+            }
+            return { 
+                question: `Convert ${value}${fromUnit} to ${toUnit}`,
+                answer: answer,
+                unit: toUnit
+            };
+        }
+
+        function generateFractionsQuestion() {
+            const numerator = Math.floor(Math.random() * 19) + 2; // 2 to 20
+            const denominator = Math.floor(Math.random() * 9) + 2; // 2 to 10
+            const wholeNumber = Math.floor(numerator / denominator);
+            const remainingNumerator = numerator % denominator;
+            const simplifiedFraction = simplifyFraction(remainingNumerator, denominator);
+            return {
+                question: `Express ${numerator}/${denominator} as a mixed number`,
+                answer: `${wholeNumber} ${simplifiedFraction.numerator}/${simplifiedFraction.denominator}`,
+                numeric: wholeNumber + (remainingNumerator / denominator)
+            };
+        }
+
+        function simplifyFraction(numerator, denominator) {
+            const gcd = (a, b) => b ? gcd(b, a % b) : a;
+            const divisor = gcd(numerator, denominator);
+            return {
+                numerator: numerator / divisor,
+                denominator: denominator / divisor
+            };
         }
 
         function displayQuestion() {
-            currentQuestion = generateQuestion();
-            document.getElementById('question').innerHTML = `
-                ${currentQuestion.num1}<br>
-                ${currentQuestion.operation} ${currentQuestion.num2}<br>
-                ---------------
-            `;
+            switch(currentGame) {
+                case 'placeValue':
+                    currentQuestion = generatePlaceValueQuestion();
+                    break;
+                case 'metricConversion':
+                    currentQuestion = generateMetricConversionQuestion();
+                    break;
+                case 'fractions':
+                    currentQuestion = generateFractionsQuestion();
+                    break;
+            }
+            document.getElementById('question').innerHTML = currentQuestion.question;
             document.getElementById('answer').value = '';
             document.getElementById('result').textContent = '';
             totalQuestions++;
         }
 
         function checkAnswer() {
-            const userAnswer = parseInt(document.getElementById('answer').value);
-            if (userAnswer === currentQuestion.answer) {
+            let userAnswer = document.getElementById('answer').value.trim();
+            let isCorrect = false;
+
+            switch(currentGame) {
+                case 'placeValue':
+                    isCorrect = parseInt(userAnswer) === currentQuestion.answer;
+                    break;
+                case 'metricConversion':
+                    isCorrect = Math.abs(parseFloat(userAnswer) - currentQuestion.answer) < 0.01;
+                    break;
+                case 'fractions':
+                    if (userAnswer.includes(' ') && userAnswer.includes('/')) {
+                        const [whole, fraction] = userAnswer.split(' ');
+                        const [num, den] = fraction.split('/');
+                        const userNumeric = parseInt(whole) + (parseInt(num) / parseInt(den));
+                        isCorrect = Math.abs(userNumeric - currentQuestion.numeric) < 0.01;
+                    }
+                    break;
+            }
+
+            if (isCorrect) {
                 document.getElementById('result').textContent = 'Correct! Great job!';
                 score++;
             } else {
-                document.getElementById('result').textContent = `Sorry, that's not correct. The right answer is ${currentQuestion.answer}.`;
+                document.getElementById('result').textContent = `Sorry, that's not correct. The right answer is ${currentQuestion.answer}${currentQuestion.unit ? currentQuestion.unit : ''}`;
             }
             document.getElementById('score').textContent = `Score: ${score} / ${totalQuestions}`;
             setTimeout(displayQuestion, 2000);
