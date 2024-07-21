@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Place Value and Trading Math Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .game-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        #question {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        #answer {
+            font-size: 18px;
+            padding: 5px;
+            width: 100px;
+        }
+        button {
+            font-size: 18px;
+            padding: 10px 20px;
+            margin-top: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Place Value and Trading Math Game</h1>
+        <div id="question"></div>
+        <input type="number" id="answer" placeholder="Your answer">
+        <button onclick="checkAnswer()">Submit</button>
+        <p id="result"></p>
+        <p id="score"></p>
+    </div>
+
+    <script>
+        let currentQuestion;
+        let score = 0;
+        let totalQuestions = 0;
+
+        function generateNumber(digits) {
+            return Math.floor(Math.random() * (10 ** digits - 10 ** (digits - 1)) + 10 ** (digits - 1));
+        }
+
+        function generateQuestion() {
+            const operation = Math.random() < 0.5 ? '+' : '-';
+            let num1, num2, answer;
+
+            if (operation === '+') {
+                num1 = generateNumber(Math.floor(Math.random() * 3) + 2);
+                num2 = generateNumber(Math.floor(Math.random() * 3) + 2);
+                answer = num1 + num2;
+            } else {
+                num1 = generateNumber(4);
+                do {
+                    num2 = generateNumber(Math.floor(Math.random() * 2) + 2);
+                } while (num2 > num1);
+                answer = num1 - num2;
+            }
+
+            return { num1, operation, num2, answer };
+        }
+
+        function displayQuestion() {
+            currentQuestion = generateQuestion();
+            document.getElementById('question').innerHTML = `
+                ${currentQuestion.num1}<br>
+                ${currentQuestion.operation} ${currentQuestion.num2}<br>
+                ---------------
+            `;
+            document.getElementById('answer').value = '';
+            document.getElementById('result').textContent = '';
+            totalQuestions++;
+        }
+
+        function checkAnswer() {
+            const userAnswer = parseInt(document.getElementById('answer').value);
+            if (userAnswer === currentQuestion.answer) {
+                document.getElementById('result').textContent = 'Correct! Great job!';
+                score++;
+            } else {
+                document.getElementById('result').textContent = `Sorry, that's not correct. The right answer is ${currentQuestion.answer}.`;
+            }
+            document.getElementById('score').textContent = `Score: ${score} / ${totalQuestions}`;
+            setTimeout(displayQuestion, 2000);
+        }
+
+        displayQuestion();
+    </script>
+</body>
+</html>
