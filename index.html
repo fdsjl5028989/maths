@@ -3,23 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Math Games</title>
+    <title>Math Adventure</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Comic Sans MS', cursive, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
             background-color: #f0f0f0;
+            background-image: url('https://img.freepik.com/free-vector/space-background-with-landscape-alien-planet_107791-1369.jpg');
+            background-size: cover;
         }
         .game-container {
-            background-color: white;
+            background-color: rgba(255, 255, 255, 0.9);
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
             text-align: center;
+            max-width: 500px;
+            width: 100%;
         }
         #question {
             font-size: 24px;
@@ -39,28 +43,80 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            transition: transform 0.1s;
         }
         button:hover {
             background-color: #45a049;
+            transform: scale(1.05);
         }
         #game-selector {
             margin-bottom: 20px;
+        }
+        #progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #ddd;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        #progress {
+            width: 0%;
+            height: 100%;
+            background-color: #4CAF50;
+            border-radius: 10px;
+            transition: width 0.5s;
+        }
+        #level {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        #timer {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        #points {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        .difficulty {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        .difficulty button {
+            margin: 0 5px;
+        }
+        @keyframes celebrate {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        .celebrate {
+            animation: celebrate 0.5s;
         }
     </style>
 </head>
 <body>
     <div class="game-container">
-        <h1>Math Games</h1>
+        <h1>Math Adventure</h1>
         <div id="game-selector">
-            <button onclick="selectGame('placeValue')">Place Value</button>
-            <button onclick="selectGame('metricConversion')">Metric Conversion</button>
-            <button onclick="selectGame('fractions')">Fractions</button>
+            <button onclick="selectGame('placeValue')">Number Ninja</button>
+            <button onclick="selectGame('metricConversion')">Unit Master</button>
+            <button onclick="selectGame('fractions')">Fraction Explorer</button>
         </div>
+        <div class="difficulty">
+            <button onclick="setDifficulty('easy')">Easy</button>
+            <button onclick="setDifficulty('medium')">Medium</button>
+            <button onclick="setDifficulty('hard')">Hard</button>
+        </div>
+        <div id="level">Level: 1</div>
+        <div id="points">Points: 0</div>
+        <div id="progress-bar"><div id="progress"></div></div>
+        <div id="timer">Time: 30s</div>
         <div id="question"></div>
         <input type="text" id="answer" placeholder="Your answer">
         <button onclick="checkAnswer()">Submit</button>
         <p id="result"></p>
-        <p id="score"></p>
     </div>
 
     <script>
@@ -68,11 +124,28 @@
         let score = 0;
         let totalQuestions = 0;
         let currentGame = 'placeValue';
+        let level = 1;
+        let points = 0;
+        let difficulty = 'medium';
+        let timer;
+        let timeLeft;
+
+        const correctSound = new Audio('https://cdn.freesound.org/previews/342/342749_4710687-lq.mp3');
+        const wrongSound = new Audio('https://cdn.freesound.org/previews/415/415083_831453-lq.mp3');
+        const levelUpSound = new Audio('https://cdn.freesound.org/previews/299/299014_5410286-lq.mp3');
 
         function selectGame(game) {
             currentGame = game;
             score = 0;
             totalQuestions = 0;
+            level = 1;
+            points = 0;
+            updateUI();
+            displayQuestion();
+        }
+
+        function setDifficulty(diff) {
+            difficulty = diff;
             displayQuestion();
         }
 
@@ -83,14 +156,15 @@
         function generatePlaceValueQuestion() {
             const operation = Math.random() < 0.5 ? '+' : '-';
             let num1, num2, answer;
+            const digits = difficulty === 'easy' ? 2 : (difficulty === 'medium' ? 3 : 4);
             if (operation === '+') {
-                num1 = generateNumber(Math.floor(Math.random() * 3) + 2);
-                num2 = generateNumber(Math.floor(Math.random() * 3) + 2);
+                num1 = generateNumber(digits);
+                num2 = generateNumber(digits);
                 answer = num1 + num2;
             } else {
-                num1 = generateNumber(4);
+                num1 = generateNumber(digits);
                 do {
-                    num2 = generateNumber(Math.floor(Math.random() * 2) + 2);
+                    num2 = generateNumber(digits - 1);
                 } while (num2 > num1);
                 answer = num1 - num2;
             }
@@ -103,10 +177,10 @@
             const toUnit = fromUnit === 'g' ? 'kg' : 'g';
             let value, answer;
             if (fromUnit === 'g') {
-                value = Math.floor(Math.random() * 9000) + 1000; // 1000g to 10000g
+                value = Math.floor(Math.random() * (difficulty === 'easy' ? 900 : (difficulty === 'medium' ? 9000 : 90000))) + 100;
                 answer = value / 1000;
             } else {
-                value = Math.floor(Math.random() * 9) + 1; // 1kg to 10kg
+                value = Math.floor(Math.random() * (difficulty === 'easy' ? 9 : (difficulty === 'medium' ? 90 : 900))) / 10;
                 answer = value * 1000;
             }
             return { 
@@ -117,8 +191,10 @@
         }
 
         function generateFractionsQuestion() {
-            const numerator = Math.floor(Math.random() * 19) + 2; // 2 to 20
-            const denominator = Math.floor(Math.random() * 9) + 2; // 2 to 10
+            const maxNumerator = difficulty === 'easy' ? 10 : (difficulty === 'medium' ? 20 : 30);
+            const maxDenominator = difficulty === 'easy' ? 5 : (difficulty === 'medium' ? 10 : 15);
+            const numerator = Math.floor(Math.random() * maxNumerator) + 2;
+            const denominator = Math.floor(Math.random() * maxDenominator) + 2;
             const wholeNumber = Math.floor(numerator / denominator);
             const remainingNumerator = numerator % denominator;
             const simplifiedFraction = simplifyFraction(remainingNumerator, denominator);
@@ -154,9 +230,29 @@
             document.getElementById('answer').value = '';
             document.getElementById('result').textContent = '';
             totalQuestions++;
+            startTimer();
+        }
+
+        function startTimer() {
+            clearInterval(timer);
+            timeLeft = difficulty === 'easy' ? 30 : (difficulty === 'medium' ? 20 : 15);
+            updateTimer();
+            timer = setInterval(() => {
+                timeLeft--;
+                updateTimer();
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    checkAnswer();
+                }
+            }, 1000);
+        }
+
+        function updateTimer() {
+            document.getElementById('timer').textContent = `Time: ${timeLeft}s`;
         }
 
         function checkAnswer() {
+            clearInterval(timer);
             let userAnswer = document.getElementById('answer').value.trim();
             let isCorrect = false;
 
@@ -180,11 +276,29 @@
             if (isCorrect) {
                 document.getElementById('result').textContent = 'Correct! Great job!';
                 score++;
+                const pointsEarned = difficulty === 'easy' ? 10 : (difficulty === 'medium' ? 20 : 30);
+                points += pointsEarned + timeLeft;
+                correctSound.play();
+                document.getElementById('question').classList.add('celebrate');
+                setTimeout(() => document.getElementById('question').classList.remove('celebrate'), 500);
             } else {
                 document.getElementById('result').textContent = `Sorry, that's not correct. The right answer is ${currentQuestion.answer}${currentQuestion.unit ? currentQuestion.unit : ''}`;
+                wrongSound.play();
             }
-            document.getElementById('score').textContent = `Score: ${score} / ${totalQuestions}`;
+            updateUI();
             setTimeout(displayQuestion, 2000);
+        }
+
+        function updateUI() {
+            document.getElementById('points').textContent = `Points: ${points}`;
+            document.getElementById('level').textContent = `Level: ${level}`;
+            const progress = (score % 10) * 10;
+            document.getElementById('progress').style.width = `${progress}%`;
+            if (score > 0 && score % 10 === 0) {
+                level++;
+                levelUpSound.play();
+                alert(`Congratulations! You've reached level ${level}!`);
+            }
         }
 
         displayQuestion();
