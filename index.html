@@ -254,46 +254,64 @@
         }
 
         function generateFractionsQuestion() {
-            const operation = Math.random() < 0.5 ? '+' : '-';
-            let numerator1, denominator1, numerator2, denominator2;
-            
-            // Generate fractions based on difficulty
-            if (difficulty === 'easy') {
-                denominator1 = denominator2 = Math.floor(Math.random() * 5) + 2; // 2 to 6
-                numerator1 = Math.floor(Math.random() * (denominator1 - 1)) + 1;
-                numerator2 = Math.floor(Math.random() * (denominator1 - 1)) + 1;
-            } else if (difficulty === 'medium') {
-                denominator1 = denominator2 = Math.floor(Math.random() * 7) + 4; // 4 to 10
-                numerator1 = Math.floor(Math.random() * (denominator1 - 1)) + 1;
-                numerator2 = Math.floor(Math.random() * (denominator1 - 1)) + 1;
-            } else {
-                denominator1 = Math.floor(Math.random() * 9) + 2; // 2 to 10
-                denominator2 = Math.floor(Math.random() * 9) + 2; // 2 to 10
-                numerator1 = Math.floor(Math.random() * (denominator1 - 1)) + 1;
-                numerator2 = Math.floor(Math.random() * (denominator2 - 1)) + 1;
-            }
-
-            // Calculate the result
-            let resultNumerator, resultDenominator;
-            if (operation === '+') {
-                resultNumerator = numerator1 * denominator2 + numerator2 * denominator1;
-                resultDenominator = denominator1 * denominator2;
-            } else {
-                resultNumerator = numerator1 * denominator2 - numerator2 * denominator1;
-                resultDenominator = denominator1 * denominator2;
-            }
-
-            // Simplify the result
-            const gcd = (a, b) => b ? gcd(b, a % b) : a;
-            const divisor = gcd(Math.abs(resultNumerator), resultDenominator);
-            resultNumerator = resultNumerator / divisor;
-            resultDenominator = resultDenominator / divisor;
-
+            const maxNumerator = difficulty === 'easy' ? 10 : (difficulty === 'medium' ? 20 : 30);
+            const maxDenominator = difficulty === 'easy' ? 5 : (difficulty === 'medium' ? 10 : 15);
+            const numerator = Math.floor(Math.random() * maxNumerator) + 2;
+            const denominator = Math.floor(Math.random() * maxDenominator) + 2;
+            const wholeNumber = Math.floor(numerator / denominator);
+            const remainingNumerator = numerator % denominator;
+            const simplifiedFraction = simplifyFraction(remainingNumerator, denominator);
             return {
-                question: `${numerator1}/${denominator1} ${operation} ${numerator2}/${denominator2}`,
-                answer: `${resultNumerator}/${resultDenominator}`,
-                numeric: resultNumerator / resultDenominator
+                question: `Express ${numerator}/${denominator} as a mixed number`,
+                answer: `${wholeNumber} ${simplifiedFraction.numerator}/${simplifiedFraction.denominator}`,
+                numeric: wholeNumber + (remainingNumerator / denominator)
             };
+        }
+
+        function simplifyFraction(numerator, denominator) {
+            const gcd = (a, b) => b ? gcd(b, a % b) : a;
+            const divisor = gcd(numerator, denominator);
+            return {
+                numerator: numerator / divisor,
+                denominator: denominator / divisor
+            };
+        }
+
+        function displayQuestion() {
+            switch(currentGame) {
+                case 'placeValue':
+                    currentQuestion = generatePlaceValueQuestion();
+                    break;
+                case 'metricConversion':
+                    currentQuestion = generateMetricConversionQuestion();
+                    break;
+                case 'fractions':
+                    currentQuestion = generateFractionsQuestion();
+                    break;
+            }
+            document.getElementById('question').innerHTML = currentQuestion.question;
+            document.getElementById('answer').value = '';
+            document.getElementById('result').textContent = '';
+            totalQuestions++;
+            startTimer();
+        }
+
+        function startTimer() {
+            clearInterval(timer);
+            timeLeft = difficulty === 'easy' ? 30 : (difficulty === 'medium' ? 20 : 15);
+            updateTimer();
+            timer = setInterval(() => {
+                timeLeft--;
+                updateTimer();
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    checkAnswer();
+                }
+            }, 1000);
+        }
+
+        function updateTimer() {
+            document.getElementById('timer').textContent = `Time: ${timeLeft}s`;
         }
 
         function checkAnswer() {
@@ -309,9 +327,10 @@
                     isCorrect = Math.abs(parseFloat(userAnswer) - currentQuestion.answer) < 0.01;
                     break;
                 case 'fractions':
-                    if (userAnswer.includes('/')) {
-                        const [num, den] = userAnswer.split('/');
-                        const userNumeric = parseInt(num) / parseInt(den);
+                    if (userAnswer.includes(' ') && userAnswer.includes('/')) {
+                        const [whole, fraction] = userAnswer.split(' ');
+                        const [num, den] = fraction.split('/');
+                        const userNumeric = parseInt(whole) + (parseInt(num) / parseInt(den));
                         isCorrect = Math.abs(userNumeric - currentQuestion.numeric) < 0.01;
                     }
                     break;
@@ -326,7 +345,7 @@
                 document.getElementById('question').classList.add('celebrate');
                 setTimeout(() => document.getElementById('question').classList.remove('celebrate'), 500);
             } else {
-                document.getElementById('result').textContent = `Sorry, that's not correct. The right answer is ${currentQuestion.answer}`;
+                document.getElementById('result').textContent = `Sorry, that's not correct. The right answer is ${currentQuestion.answer}${currentQuestion.unit ? currentQuestion.unit : ''}`;
                 wrongSound.play();
             }
             updateUI();
@@ -335,7 +354,21 @@
                 displayQuestion();
                 displayHighScores();
             }, 2000);
-        }        function updateHighScore() {
+        }
+
+        function updateUI() {
+            document.getElementById('points').textContent = `Points: ${points}`;
+            document.getElementById('level').textContent = `Level: ${level}`;
+            const progress = (score % 10) * 10;
+            document.getElementById('progress').style.width = `${progress}%`;
+            if (score > 0 && score % 10 === 0) {
+                level++;
+                levelUpSound.play();
+                alert(`Congratulations! You've reached level ${level}!`);
+            }
+        }
+
+        function updateHighScore() {
             let highScores = JSON.parse(localStorage.getItem('mathAdventureHighScores')) || {};
             if (!highScores[currentGame]) {
                 highScores[currentGame] = {};
